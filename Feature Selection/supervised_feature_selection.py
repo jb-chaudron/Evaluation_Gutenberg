@@ -1,12 +1,13 @@
+from function import model2dists, get_genres, gen_XY, RRelief
+from function import get_genres, gutenberg2df, data_aug_dfrantext
 import pickle
 import pandas as pd
 import re 
-from functions_main import get_genres, gutenberg2df, data_aug_dfrantext
-from Evaluation_functions import model2dists, IsometryTesting, NeighborhoodTesting,feature_selection_isometry, ConnectednessTesting
+#from functions_main import get_genres, gutenberg2df, data_aug_dfrantext
+#from Evaluation_functions import model2dists, IsometryTesting, NeighborhoodTesting,feature_selection_isometry, ConnectednessTesting
 from tqdm import tqdm
 import numpy as np
 from scipy.spatial.distance import squareform, pdist
-
 
 """
 ---------- Here the list of the data input ----------
@@ -90,7 +91,7 @@ df_gutenberg_bookshelf = gutenberg2df(bookshelf)
 df_gutenberg_subject = gutenberg2df(subject)
 
 """
------------- Isometry testing ------------
+------------ Supervised Feature Selection ------------
 """
 models_names = ["LG_Mean",
                "LG_Sum",
@@ -118,52 +119,12 @@ models_names = ["LG_Mean",
 ind_frantext = [ind for ind in df_frantext_aug.index]
 dists_frantext = model2dists(list_frantext,ind_frantext)
 
-# Computing the statistics of isometry
-frantext_isometry = IsometryTesting(list_frantext, df_frantext_aug, dists_frantext,
-                                    models_name=models_names, frantext=True)
-df_frantext_isometry = frantext_isometry.get_isometry_score(return_score=True)
-
-# Data prepration for continous labelling
-ind_gutenberg = [ind for ind in df_gutenberg_all.index]
-dists_gutenberg = model2dists(list_gutenberg,ind_gutenberg)
-gutenberg_isometry = IsometryTesting(list_gutenberg, df_gutenberg_all, dists_gutenberg,
-                                     models_name=models_names,frantext=False)
-
-df_gutenberg_isometry = gutenberg_isometry.get_isometry_score(return_score=True)
-
-
-
 
 """
------------- Neighborhood Testing ------------
-"""
-dist_frtext_genre = squareform(pdist(df_frantext_aug.to_numpy(), metric="hamming"))
-frantext_neighborhood = NeighborhoodTesting(dists_frantext, dist_frtext_genre,
-                                            models_name=models_names)
-df_frantext_neighborhood = frantext_neighborhood.compute_scores(score_to_compute="all")
-
-
-df_gutenberg_best = df_gutenberg_all.loc[:,gutenberg_isometry.genre_features_selected]
-dist_gutenberg_genre = squareform(pdist(df_gutenberg_best.to_numpy(), metric="hamming"))
-
-gutenberg_neighborhood = NeighborhoodTesting(dists_gutenberg, dist_gutenberg_genre,
-                                             models_name=models_names)
-df_gutenberg_neighborhood = gutenberg_neighborhood.compute_scores(score_to_compute="all")
-
-
-"""
------------- Connectedness ------------
+------------ Rrelief ------------
 """
 
-data_ranked = [np.argsort(X,axis=1) for X in list_frantext]
-frantext_connectedness = ConnectednessTesting(data_ranked)
-frantext_connectedness.n_tests=250
-models_scores = frantext_connectedness.scoring_all_models()
+X, y = gen_XY(df_gutenberg_all,list_gutenberg,squareform(pdist(df_gutenberg_all,metric="hamming")),
+              10_000,0)
 
-data_ranked = [np.argsort(X,axis=1) for X in list_gutenberg]
-gutenberg_connectedness = ConnectednessTesting(data_ranked)
-gutenberg_connectedness.n_tests=250
-gutenberg_connectivity_scores = gutenberg_connectedness.scoring_all_models()
-
-
-
+W = RRelief(X, y)

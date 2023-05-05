@@ -63,6 +63,7 @@ class Gut_text(object):
             self.bad = 1
             return False
 
+    
 
     def para2nlp(self):
         nlp = spacy.load("fr_core_news_sm")

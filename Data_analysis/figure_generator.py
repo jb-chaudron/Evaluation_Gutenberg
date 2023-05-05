@@ -1,3 +1,10 @@
+from umap import UMAP
+import matplotlib.pyplot as plt
+import pandas as pd
+from functions_main import get_genres, gutenberg2df, data_aug_dfrantext
+from Evaluation_functions import model2dists, IsometryTesting, NeighborhoodTesting,feature_selection_isometry, ConnectednessTesting
+from tqdm import tqdm
+from sklearn.cluster import KMeans
 import pickle
 import pandas as pd
 import re 
@@ -90,80 +97,29 @@ df_gutenberg_bookshelf = gutenberg2df(bookshelf)
 df_gutenberg_subject = gutenberg2df(subject)
 
 """
------------- Isometry testing ------------
+------------ Figure illustrant les différences entre genres ------------
 """
-models_names = ["LG_Mean",
-               "LG_Sum",
-               "Fct_Mean",
-               "Fct_Sum",
-                "Fct_Max_Sum",
-                "Fct_Max_Mean",
-                "Fct_BPE_Sum",
-                "Fct_BPE_Mean",
-                "Fct_Markov_BPE",
-                "Fct_Markov_Base",
-                "Reg_Discret_Sum",
-                "Reg_Discret_Mean",
-                "Reg_Euclidean_Sum",
-                "Reg_Euclidean_Mean",
-                "Reg_Cosine_Sum",
-                "Reg_Cosine_Mean",
-                "Reg_BPE_Sum",
-                "Reg_BPE_Mean",
-                "Reg_Markov_BPE",
-                "Reg_Markov_Base"
-               ]
+text_to_embed = list_gutenberg[3].loc[df_gutenberg_all.index,:]
+emb_genre = UMAP(metric="hamming").fit_transform(df_gutenberg_all)
+emb_texts = UMAP().fit_transform(text_to_embed)
 
-# Data Transformation
-ind_frantext = [ind for ind in df_frantext_aug.index]
-dists_frantext = model2dists(list_frantext,ind_frantext)
+n_clust = 20
 
-# Computing the statistics of isometry
-frantext_isometry = IsometryTesting(list_frantext, df_frantext_aug, dists_frantext,
-                                    models_name=models_names, frantext=True)
-df_frantext_isometry = frantext_isometry.get_isometry_score(return_score=True)
+km = KMeans(n_clusters=n_clust)
+labels = km.fit_predict(emb_genre)
 
-# Data prepration for continous labelling
-ind_gutenberg = [ind for ind in df_gutenberg_all.index]
-dists_gutenberg = model2dists(list_gutenberg,ind_gutenberg)
-gutenberg_isometry = IsometryTesting(list_gutenberg, df_gutenberg_all, dists_gutenberg,
-                                     models_name=models_names,frantext=False)
+emb_better = UMAP().fit_transform(text_to_embed,labels)
+names = ["genre_topology_in_gutenberg.png",
+         "genre_topology_in_texts.png",
+         "genre_topology_optimized.png"]
 
-df_gutenberg_isometry = gutenberg_isometry.get_isometry_score(return_score=True)
-
-
-
-
-"""
------------- Neighborhood Testing ------------
-"""
-dist_frtext_genre = squareform(pdist(df_frantext_aug.to_numpy(), metric="hamming"))
-frantext_neighborhood = NeighborhoodTesting(dists_frantext, dist_frtext_genre,
-                                            models_name=models_names)
-df_frantext_neighborhood = frantext_neighborhood.compute_scores(score_to_compute="all")
-
-
-df_gutenberg_best = df_gutenberg_all.loc[:,gutenberg_isometry.genre_features_selected]
-dist_gutenberg_genre = squareform(pdist(df_gutenberg_best.to_numpy(), metric="hamming"))
-
-gutenberg_neighborhood = NeighborhoodTesting(dists_gutenberg, dist_gutenberg_genre,
-                                             models_name=models_names)
-df_gutenberg_neighborhood = gutenberg_neighborhood.compute_scores(score_to_compute="all")
-
-
-"""
------------- Connectedness ------------
-"""
-
-data_ranked = [np.argsort(X,axis=1) for X in list_frantext]
-frantext_connectedness = ConnectednessTesting(data_ranked)
-frantext_connectedness.n_tests=250
-models_scores = frantext_connectedness.scoring_all_models()
-
-data_ranked = [np.argsort(X,axis=1) for X in list_gutenberg]
-gutenberg_connectedness = ConnectednessTesting(data_ranked)
-gutenberg_connectedness.n_tests=250
-gutenberg_connectivity_scores = gutenberg_connectedness.scoring_all_models()
-
-
+for e,model in enumerate([emb_genre,emb,better_emb]):
+    plt.scatter(model[:,0],model[:,1],
+                s=5,
+                c=labels,
+                cmap="tab20")
+    plt.savefig(names[e],
+                bbox_inches="tight",
+                dpi=300)
+    plt.show()
 
