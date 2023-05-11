@@ -6,6 +6,7 @@ from Evaluation_functions import model2dists, IsometryTesting, NeighborhoodTesti
 from tqdm import tqdm
 import numpy as np
 from scipy.spatial.distance import squareform, pdist
+from sklearn.decomposition import TruncatedSVD
 
 
 """
@@ -88,7 +89,11 @@ df_frantext_aug = data_aug_dfrantext(df_frantext, list_frantext[0].index )
 df_gutenberg_all = gutenberg2df(labels)
 df_gutenberg_bookshelf = gutenberg2df(bookshelf)
 df_gutenberg_subject = gutenberg2df(subject)
+compressed_all = TruncatedSVD(28).fit_transform(df_gutenberg_all)
+df_compressed_all = pd.DataFrame(compressed_all,
+                                 index=df_gutenberg_all.index)
 
+relevant_model = df_compressed_all
 """
 ------------ Isometry testing ------------
 """
@@ -124,9 +129,9 @@ frantext_isometry = IsometryTesting(list_frantext, df_frantext_aug, dists_frante
 df_frantext_isometry = frantext_isometry.get_isometry_score(return_score=True)
 
 # Data prepration for continous labelling
-ind_gutenberg = [ind for ind in df_gutenberg_all.index]
+ind_gutenberg = [ind for ind in relevant_model.index]
 dists_gutenberg = model2dists(list_gutenberg,ind_gutenberg)
-gutenberg_isometry = IsometryTesting(list_gutenberg, df_gutenberg_all, dists_gutenberg,
+gutenberg_isometry = IsometryTesting(list_gutenberg, relevant_model, dists_gutenberg,
                                      models_name=models_names,frantext=False)
 
 df_gutenberg_isometry = gutenberg_isometry.get_isometry_score(return_score=True)

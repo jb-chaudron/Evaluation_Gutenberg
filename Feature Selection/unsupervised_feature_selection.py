@@ -34,7 +34,7 @@ def graph_correlation(data_in,corr_thresh):
     for dim, name_1 in zip(corr_mat,data_in.columns):
         for d, name_2 in zip(dim, data_in.columns):
             if ((name_1 != name_2) and (d > corr_thresh)):
-                G.add_edge((name_1,name_2))
+                G.add_edge(name_1,name_2)
     return G
 
 from sklearn.decomposition import PCA

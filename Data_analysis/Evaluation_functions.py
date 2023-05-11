@@ -31,11 +31,11 @@ def sammon(X_genre, X_text):
 
     return sammon.sum()
 
-def minimal_wiring(X_genre,X_text,k=3):
+def minimal_wiring(X_genre,X_text,k=20):
 
     genre_rank = rankdata(X_genre,axis=1,method="dense")
     X_neighbors = np.where(genre_rank<=k,X_text,0)
-    return X_neighbors.mean() # On prend la moyenne car on est pas sûr de la pb d'avoir le même nombre d'éléments à chaque fois
+    return X_neighbors.sum() # On prend la moyenne car on est pas sûr de la pb d'avoir le même nombre d'éléments à chaque fois
 
 def minimal_path_length(X_genre,X_text,k=3):
     """
@@ -283,7 +283,11 @@ class IsometryTesting():
                                             index=self.models_name,
                                             columns=["R2","Spearman"])
 
-        self.label_distances = squareform(pdist(self.labels.to_numpy(),metric="hamming"))
+        test_binary = lambda a : sum([not b in [1,0] for b in a.flatten()])
+        if test_binary(self.labels.to_numpy())>0:
+            self.label_distances = squareform(pdist(self.labels.to_numpy()))
+        else:
+            self.label_distances = squareform(pdist(self.labels.to_numpy(),metric="hamming"))
         for e,model in enumerate(self.df_isometrie.index):
             self.df_isometrie.loc[model,"R2"] = self.r2(regressor, 250_000, e, feature_selection)
             self.df_isometrie.loc[model,"Spearman"] = self.correlation(e)
