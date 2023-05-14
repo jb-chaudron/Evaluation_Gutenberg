@@ -148,8 +148,9 @@ frantext_neighborhood = NeighborhoodTesting(dists_frantext, dist_frtext_genre,
 df_frantext_neighborhood = frantext_neighborhood.compute_scores(score_to_compute="all")
 
 
-df_gutenberg_best = df_gutenberg_all.loc[:,gutenberg_isometry.genre_features_selected]
-dist_gutenberg_genre = squareform(pdist(df_gutenberg_best.to_numpy(), metric="hamming"))
+#df_gutenberg_best = df_gutenberg_all.loc[:,gutenberg_isometry.genre_features_selected]
+#dist_gutenberg_genre = squareform(pdist(df_gutenberg_best.to_numpy(), metric="hamming"))
+dist_gutenberg_genre = squareform(pdist(relevant_model.to_numpy()))
 
 gutenberg_neighborhood = NeighborhoodTesting(dists_gutenberg, dist_gutenberg_genre,
                                              models_name=models_names)
