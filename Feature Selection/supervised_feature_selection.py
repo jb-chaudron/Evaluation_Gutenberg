@@ -174,7 +174,8 @@ df_E_net_scores = evaluation_systematique(df_compressed_all,list_gutenberg,
 --------- Neural Network sans embedding ------------
 """
 
-
+import torch
+from torch import nn
 from torch.utils.data import DataLoader, Dataset
 import itertools as itr
 import random
